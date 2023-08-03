@@ -3,10 +3,18 @@ package com.example.remotecare;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.Toolbar;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,48 +26,46 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        showUserOnToolbar();
+
         Button callButton = findViewById(R.id.callButton);
         callButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                OkHttpClient client = new OkHttpClient();
-                Request request = new Request.Builder()
-                        .url("http://" + readIpAddress() +":8081/api/call") // 공인ip
-                        .build();
-                client.newCall(request).enqueue(new Callback() {
-                    @Override
-                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                        if(response.isSuccessful()) {
-                            String responseBody = response.body().string();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(MainActivity.this, responseBody, Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        } else {
-                            runOnUiThread((new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(MainActivity.this, "Request failed", Toast.LENGTH_SHORT).show();
-                                }
-                            }));
-                        }
-                    }
-                });
+                showUserOnToolbar();
             }
         });
+    }
+
+    public void showUserOnToolbar() {
+        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
+
+        SharedPreferences sharedPreferences = getSharedPreferences("SharedPreferences", MODE_PRIVATE);
+        String token = sharedPreferences.getString("token", null);
+        Log.d(TAG, "showUserOnToolbar: " + token);
+
+        if(token != null) {
+            try {
+                String[] splitToken = token.split("\\.");
+                String base64EncodedBody = splitToken[1];
+                String body = new String(Base64.decode(base64EncodedBody, Base64.DEFAULT));
+                JSONObject json = new JSONObject(body);
+                String userId = json.getString("userId");
+
+                TextView usernameToolbarTextView = findViewById(R.id.usernameToolbarTextView);
+                usernameToolbarTextView.setText(userId + " 님 환영합니다.");
+            } catch(JSONException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private String readIpAddress() {

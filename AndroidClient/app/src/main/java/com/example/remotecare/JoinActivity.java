@@ -100,7 +100,7 @@ public class JoinActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                final String responseMessage = response.body().string();
+                String responseMessage = response.body().string();
                 Log.d("Response", responseMessage);
                 runOnUiThread(new Runnable() {
                     @Override

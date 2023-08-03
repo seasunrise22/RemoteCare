@@ -9,7 +9,7 @@ class User extends Sequelize.Model {
                 unique: true,
             },
             userPassword: {
-                type: Sequelize.STRING(20), // 최대 20자
+                type: Sequelize.STRING(100),
                 allowNull: false,
             },
             userPosition: {
