@@ -10,28 +10,74 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        app:layout_constraintTop_toTopOf="parent"
         android:background="@color/black"
-        >
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/usernameToolbarTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            />
+            android:text="비로그인 상태"
+            android:textColor="@color/white" />
+
+        <Button
+            android:id="@+id/callButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginEnd="16dp"
+            android:onClick="onCallButtonClick"
+            android:text="영상통화시작" />
 
     </androidx.appcompat.widget.Toolbar>
 
-    <Button
-        android:id="@+id/callButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="영상통화시작"
+    <FrameLayout
+        android:id="@+id/receiverCameraLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#86E57F"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toTopOf="@id/callerCameraLayout"
+        app:layout_constraintVertical_weight="1">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="수신자 화면"
+            />
+
+        <TextureView
+            android:id="@+id/receiverCameraView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintBottom_toTopOf="@id/callerCameraView"
+            app:layout_constraintTop_toBottomOf="@id/toolbar"
+            app:layout_constraintVertical_weight="1" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/callerCameraLayout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="#FFE400"
+        app:layout_constraintTop_toBottomOf="@id/receiverCameraLayout"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        />
+        app:layout_constraintVertical_weight="1">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="발신자 화면"
+            />
+
+        <TextureView
+            android:id="@+id/callerCameraView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
+    </FrameLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

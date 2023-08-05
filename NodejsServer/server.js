@@ -2,6 +2,8 @@ const express = require('express');
 const morgan = require('morgan');
 const passport = require('passport');
 const dotenv = require('dotenv');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const apiRouter = require('./routes/api');
@@ -14,19 +16,30 @@ passportConfig();
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(session({
+    resave: false,
+    saveUninitialized: false,
+    secret: process.env.COOKIE_SECRET,
+    cookie: {
+        httpOnly: true,
+        secure: false,
+    },
+}));
+
 app.use('/api', apiRouter);
 app.use('/auth', authRouter);
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-sequelize.sync({ force:false })
-.then(() => {
-    console.log("데이터베이스 연결 성공");
-})
-.catch((err) => {
-    console.error(err);
-});
+sequelize.sync({ force: false })
+    .then(() => {
+        console.log("데이터베이스 연결 성공");
+    })
+    .catch((err) => {
+        console.error(err);
+    });
 
 app.listen(8081, () => {
     console.log('Server listening on port 8081');
