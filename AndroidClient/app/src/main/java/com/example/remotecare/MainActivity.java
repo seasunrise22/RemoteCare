@@ -1,12 +1,14 @@
 package com.example.remotecare;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.SurfaceTexture;
@@ -23,24 +25,30 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
-import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Toolbar;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.concurrent.Executor;
 
+import io.socket.client.IO;
+import io.socket.client.Socket;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
@@ -50,36 +58,114 @@ public class MainActivity extends AppCompatActivity {
     private TextureView callerTextureView;
     private String cameraId;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        callerTextureView = findViewById(R.id.callerCameraView);
+        init();
 
-        showUserOnToolbar();
+        callerTextureView = findViewById(R.id.callerCameraView);
     }
 
-    public void showUserOnToolbar() {
-        androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+    private void sendLoginSuccessSignal(String token) {
+        Socket socket;
+
+        try {
+            socket = IO.socket("http://" + readIpAddress() + ":8081/");
+            socket.connect();
+            socket.emit("loginSuccess", token);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void init() {
         SharedPreferences sharedPreferences = getSharedPreferences("SharedPreferences", MODE_PRIVATE);
         String token = sharedPreferences.getString("token", null);
         Log.d(TAG, "showUserOnToolbar: " + token);
 
         if (token != null) {
             try {
+                sendLoginSuccessSignal(token);
                 String[] splitToken = token.split("\\.");
                 String base64EncodedBody = splitToken[1];
                 String body = new String(Base64.decode(base64EncodedBody, Base64.DEFAULT));
                 JSONObject json = new JSONObject(body);
+                String userPosition = null;
+                if (json.getString("userPosition").equals("caller")) {
+                    userPosition = "발신자";
+                } else if (json.getString("userPosition").equals("receiver")) {
+                    userPosition = "수신자";
+                } else {
+                    userPosition = "??";
+                }
+
                 String userId = json.getString("userId");
 
-                TextView usernameToolbarTextView = findViewById(R.id.usernameToolbarTextView);
-                usernameToolbarTextView.setText(userId + " 님 환영합니다.");
+                TextView userToolbarTextView = findViewById(R.id.userToolbarTextView);
+                userToolbarTextView.setText(userPosition + " " + userId + " 님 환영합니다.");
+
+//                TextView receiverCameraText = findViewById(R.id.receiverCameraText);
+//                receiverCameraText.setText(userPosition + " " + userId + " 화면");
+
+                TextView callerCameraText = findViewById(R.id.callerCameraText);
+                callerCameraText.setText(userPosition + " " + userId + " 화면");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
+
+        FrameLayout receiverCameraLayout = findViewById(R.id.receiverCameraLayout);
+        receiverCameraLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG, "onClick: FrameLayout receiverCameraLayout");
+                final EditText input = new EditText(MainActivity.this);
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setTitle("수신자 아이디 입력")
+                        .setView(input)
+                        .setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                // 수신자 아이디 처리 코드
+                                String postData = null;
+                                String receiverId = input.getText().toString();
+                                try {
+                                    postData = "userId=" + URLEncoder.encode(receiverId, "UTF-8");
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+
+                                OkHttpClient client = new OkHttpClient();
+                                RequestBody body = RequestBody.create(postData, MediaType.parse("application/x-www-form-urlencoded"));
+                                Request request = new Request.Builder()
+                                        .url("http://" + readIpAddress() + ":8081/api/call")
+                                        .post(body)
+                                        .build();
+                                client.newCall(request).enqueue(new Callback() {
+                                    @Override
+                                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                                        e.printStackTrace();
+                                    }
+
+                                    @Override
+                                    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                        Log.d(TAG, "onResponse: 응답왔음");
+                                    }
+                                });
+                            }
+                        })
+                        .setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                dialogInterface.cancel();
+                            }
+                        })
+                        .show();
+            }
+        });
     }
 
     public void onCallButtonClick(View view) {
@@ -121,6 +207,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startVideoCall() {
+        FrameLayout receiverCameraLayout = findViewById(R.id.receiverCameraLayout);
+        receiverCameraLayout.setOnClickListener(null);
         Log.d(TAG, "startVideoCall: enter");
         cameraManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {

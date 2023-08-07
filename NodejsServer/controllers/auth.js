@@ -20,20 +20,21 @@ exports.userJoin = async (req, res) => {
 
 exports.userLogin = async (req, res, next) => {
     passport.authenticate('local', (authError, user, info) => {
-        if(authError) {
+        if (authError) {
             console.error(authError);
         }
-        if(!user) {
+        if (!user) {
             return res.json(info.message);
         }
         return req.login(user, (loginError) => {
-            if(loginError) {
+            if (loginError) {
                 console.error(loginError);
             }
             const token = jwt.sign({
-                userId: user.userId
+                userId: user.userId,
+                userPosition: user.userPosition,
             }, process.env.JWT_SECRET);
-            
+
             return res.json({
                 success: true,
                 message: '로그인에 성공하였습니다.',

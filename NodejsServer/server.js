@@ -1,11 +1,19 @@
 const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
 const morgan = require('morgan');
 const passport = require('passport');
 const dotenv = require('dotenv');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 
+const socket = require('./routes/socket');
+
 const app = express();
+const server = http.createServer(app);
+const io = socketIO(server);
+socket(io);
+
 const apiRouter = require('./routes/api');
 const authRouter = require('./routes/auth');
 const { sequelize } = require('./models');
@@ -41,6 +49,6 @@ sequelize.sync({ force: false })
         console.error(err);
     });
 
-app.listen(8081, () => {
+server.listen(8081, () => {
     console.log('Server listening on port 8081');
 });
