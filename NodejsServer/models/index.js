@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 const User = require('./user');
-const IsConnected = require('./isConnected');
+const UserState = require('./userState');
 const env = process.env.NODE_ENV || 'development';
 const config = require('../config/config')[env];
 
@@ -11,12 +11,12 @@ const sequelize = new Sequelize(
 
 db.sequelize = sequelize;
 db.User = User;
-db.IsConnected = IsConnected;
+db.UserState = UserState;
 
 User.initiate(sequelize);
-IsConnected.initiate(sequelize);
+UserState.initiate(sequelize);
 
 User.associate(db);
-IsConnected.associate(db);
+UserState.associate(db);
 
 module.exports = db;

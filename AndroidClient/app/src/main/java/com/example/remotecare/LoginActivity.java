@@ -47,15 +47,15 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void sendFormData() {
-        EditText userIdEditText = findViewById(R.id.loginUserId);
-        String userId = userIdEditText.getText().toString();
+        EditText userNameEditText = findViewById(R.id.loginUserName);
+        String userName = userNameEditText.getText().toString();
 
         EditText userPasswordEditText = findViewById(R.id.loginUserPassword);
         String userPassword = userPasswordEditText.getText().toString();
 
         String postData = null;
         try {
-            postData = "userId=" + URLEncoder.encode(userId, "UTF-8")
+            postData = "userName=" + URLEncoder.encode(userName, "UTF-8")
                     + "&userPassword=" + URLEncoder.encode(userPassword, "UTF-8");
         } catch(UnsupportedEncodingException e) {
             e.printStackTrace();

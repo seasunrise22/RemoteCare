@@ -4,11 +4,11 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 exports.userJoin = async (req, res) => {
-    const { userId, userPassword, userPosition } = req.body;
+    const { userName, userPassword, userPosition } = req.body;
     try {
         const hash = await bcrypt.hash(userPassword, 12);
         await User.create({
-            userId,
+            userName,
             userPassword: hash,
             userPosition
         });
@@ -31,7 +31,7 @@ exports.userLogin = async (req, res, next) => {
                 console.error(loginError);
             }
             const token = jwt.sign({
-                userId: user.userId,
+                userName: user.userName,
                 userPosition: user.userPosition,
             }, process.env.JWT_SECRET);
 

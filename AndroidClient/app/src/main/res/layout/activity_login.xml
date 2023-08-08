@@ -19,7 +19,7 @@
         >
 
     <EditText
-        android:id="@+id/loginUserId"
+        android:id="@+id/loginUserName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="아이디"
@@ -35,7 +35,7 @@
         android:layout_height="wrap_content"
         android:hint="비밀번호"
         android:inputType="textPassword"
-        app:layout_constraintTop_toBottomOf="@id/loginUserId"
+        app:layout_constraintTop_toBottomOf="@id/loginUserName"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"

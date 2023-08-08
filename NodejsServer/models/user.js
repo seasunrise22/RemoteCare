@@ -3,7 +3,7 @@ const Sequelize = require('sequelize');
 class User extends Sequelize.Model {
     static initiate(sequelize) {
         User.init({
-            userId: {
+            userName: {
                 type: Sequelize.STRING(20), // 최대 20자
                 allowNull: false,
                 unique: true,
@@ -29,7 +29,7 @@ class User extends Sequelize.Model {
     }
 
     static associate(db) {
-        db.User.hasOne(db.IsConnected, { foreignKey: 'userId', onDelete: 'CASCADE' });
+        db.User.hasOne(db.UserState, { foreignKey: 'userId' });
     }
 }
 

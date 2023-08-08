@@ -38,8 +38,8 @@ public class JoinActivity extends AppCompatActivity {
     }
 
     public void sendFormData() {
-        EditText userIdEditText = findViewById(R.id.joinUserId);
-        String userId = userIdEditText.getText().toString();
+        EditText userNameEditText = findViewById(R.id.joinUserName);
+        String userName = userNameEditText.getText().toString();
 
         EditText userPasswordEditText = findViewById(R.id.joinUserPassword);
         String userPassword = userPasswordEditText.getText().toString();
@@ -51,7 +51,7 @@ public class JoinActivity extends AppCompatActivity {
         int checkedId = radioGroup.getCheckedRadioButtonId();
         String userPosition = null;
 
-        if(userId.isEmpty()) {
+        if(userName.isEmpty()) {
             Toast.makeText(this, "아이디를 입력해주세요.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -77,7 +77,7 @@ public class JoinActivity extends AppCompatActivity {
 
         String postData = null;
         try {
-            postData = "userId=" + URLEncoder.encode(userId, "UTF-8")
+            postData = "userName=" + URLEncoder.encode(userName, "UTF-8")
                     + "&userPassword=" + URLEncoder.encode(userPassword, "UTF-8")
                     + "&userPosition=" + URLEncoder.encode(userPosition, "UTF-8");
         } catch(UnsupportedEncodingException e) {

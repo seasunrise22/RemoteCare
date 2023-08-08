@@ -5,15 +5,15 @@ const User = require('../models/user');
 
 module.exports = () => {
     passport.use(new LocalStrategy({
-        usernameField: 'userId',
+        usernameField: 'userName',
         passwordField: 'userPassword'
     },
-        async (userId, userPassword, done) => {
+        async (userName, userPassword, done) => {
             try {
-                const exUser = await User.findOne({ where: { userId }});
-                if(exUser) {
+                const exUser = await User.findOne({ where: { userName } });
+                if (exUser) {
                     const result = await bcrypt.compare(userPassword, exUser.userPassword);
-                    if(result) {
+                    if (result) {
                         done(null, exUser);
                     } else {
                         done(null, false, { message: '비밀번호가 일치하지 않습니다.' });
@@ -24,5 +24,5 @@ module.exports = () => {
             } catch (error) {
                 console.error(error);
             }
-    }))
+        }))
 }

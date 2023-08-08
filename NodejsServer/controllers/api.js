@@ -1,4 +1,4 @@
-const IsConnected = require('../models/isConnected');
+const UserState = require('../models/userState');
 
 exports.sendToReceiver = (req, res) => {
     console.log(req.body.userId);
@@ -6,7 +6,7 @@ exports.sendToReceiver = (req, res) => {
 
 exports.saveConnectState = async (req, res) => {
     try {
-        await IsConnected.create({
+        await UserState.create({
             isConnected: true,
         });
         res.json('로그인 상태 저장 성공');
