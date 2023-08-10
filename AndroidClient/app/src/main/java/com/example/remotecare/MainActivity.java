@@ -43,6 +43,7 @@ import java.util.concurrent.Executor;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -57,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
     private CameraManager cameraManager;
     private TextureView callerTextureView;
     private String cameraId;
+    private Socket socket;
+    private String token;
 
 
     @Override
@@ -69,26 +72,45 @@ public class MainActivity extends AppCompatActivity {
         callerTextureView = findViewById(R.id.callerCameraView);
     }
 
-    private void sendLoginSuccessSignal(String token) {
-        Socket socket;
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
 
+        sendDisconnectSignal();
+    }
+    private void sendConnectSignal(String token) {
+        // 기존 소켓 연결 종료
+        if (socket != null && socket.connected()) {
+            socket.disconnect();
+        }
+
+        // 새로운 소켓 연결 생성 및 로그인 이벤트 요청
         try {
             socket = IO.socket("http://" + readIpAddress() + ":8081/");
             socket.connect();
-            socket.emit("loginSuccess", token);
+            socket.emit("login", token);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
     }
 
+    private void sendDisconnectSignal() {
+
+        // 기존 소켓 연결이 있다면
+        if (socket != null && socket.connected()) {
+            socket.disconnect();
+        }
+    }
+
     public void init() {
         SharedPreferences sharedPreferences = getSharedPreferences("SharedPreferences", MODE_PRIVATE);
-        String token = sharedPreferences.getString("token", null);
+        token = sharedPreferences.getString("token", null);
         Log.d(TAG, "showUserOnToolbar: " + token);
 
         if (token != null) {
             try {
-                sendLoginSuccessSignal(token);
+                sendConnectSignal(token);
+
                 String[] splitToken = token.split("\\.");
                 String base64EncodedBody = splitToken[1];
                 String body = new String(Base64.decode(base64EncodedBody, Base64.DEFAULT));

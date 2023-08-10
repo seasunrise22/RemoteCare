@@ -15,6 +15,10 @@ class User extends Sequelize.Model {
             userPosition: {
                 type: Sequelize.ENUM('caller', 'receiver'),
                 allowNull: false,
+            },
+            socketId: {
+                type: Sequelize.STRING,
+                allowNull: true,
             }
         }, {
             sequelize,

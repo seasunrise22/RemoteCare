@@ -3,25 +3,22 @@ const db = require('../models');
 
 module.exports = (io) => {
     io.on('connection', (socket) => {
-        console.log('A user connected');
 
-        socket.on('loginSuccess', async (token) => {
+        socket.on('login', async (token) => {
             try {
-                console.log('Login success event received');
-                const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+                const decodedToken = jwt.verify(token, process.env.JWT_SECRET); // 인증실패하면 error throw 됨
                 const userName = decodedToken.userName;
-                console.log("userName: " + userName);
+                console.log(userName + ' is connected');
 
                 // IsConnected 모델 생성 및 저장
                 const user = await db.User.findOne({ where: { userName } });
                 if (user) {
+                    await user.update({ socketId: socket.id });
                     const userState = await user.getUserState();
                     if (userState) {
                         await userState.update({ isConnected: true });
-                        console.log('IsConnected 모델 업데이트 성공');
                     } else {
                         await user.createUserState({ isConnected: true });
-                        console.log('IsConnected 모델 생성 및 저장 성공');
                     }
                 } else {
                     console.log('해당 유저를 찾을 수 없습니다.');
@@ -31,8 +28,18 @@ module.exports = (io) => {
             }
         });
 
-        socket.on('disconnect', () => {
-            console.log('A user disconnected');
+        socket.on('disconnect', async () => {
+            const user = await db.User.findOne({ where: { socketId: socket.id } });
+            let userName;
+            if (user) {
+                userName = user.userName;
+                const userState = await user.getUserState();
+                if (userState) {
+                    await userState.update({ isConnected: false });
+                }
+            }
+
+            console.log(userName + ' is disconnected');
         });
     });
 }
