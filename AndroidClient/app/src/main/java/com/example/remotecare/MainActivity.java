@@ -60,6 +60,9 @@ public class MainActivity extends AppCompatActivity {
     private String cameraId;
     private Socket socket;
     private String token;
+    private FrameLayout receiverCameraLayout;
+    private TextView receiverCameraText;
+    private String ipAddress;
 
 
     @Override
@@ -67,9 +70,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        init();
-
         callerTextureView = findViewById(R.id.callerCameraView);
+        receiverCameraLayout = findViewById(R.id.receiverCameraLayout);
+        receiverCameraText = findViewById(R.id.receiverCameraText);
+
+        ipAddress = readIpAddress();
+
+        init();
     }
 
     @Override
@@ -78,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
         sendDisconnectSignal();
     }
+
     private void sendConnectSignal(String token) {
         // 기존 소켓 연결 종료
         if (socket != null && socket.connected()) {
@@ -86,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 새로운 소켓 연결 생성 및 로그인 이벤트 요청
         try {
-            socket = IO.socket("http://" + readIpAddress() + ":8081/");
+            socket = IO.socket("http://" + ipAddress + ":8081/");
             socket.connect();
             socket.emit("login", token);
         } catch (URISyntaxException e) {
@@ -124,22 +132,18 @@ public class MainActivity extends AppCompatActivity {
                     userPosition = "??";
                 }
 
-                String userId = json.getString("userId");
+                String userName = json.getString("userName");
 
                 TextView userToolbarTextView = findViewById(R.id.userToolbarTextView);
-                userToolbarTextView.setText(userPosition + " " + userId + " 님 환영합니다.");
-
-//                TextView receiverCameraText = findViewById(R.id.receiverCameraText);
-//                receiverCameraText.setText(userPosition + " " + userId + " 화면");
+                userToolbarTextView.setText(userPosition + " " + userName + " 님 환영합니다.");
 
                 TextView callerCameraText = findViewById(R.id.callerCameraText);
-                callerCameraText.setText(userPosition + " " + userId + " 화면");
+                callerCameraText.setText(userPosition + " " + userName + " 화면");
             } catch (JSONException e) {
                 e.printStackTrace();
             }
         }
 
-        FrameLayout receiverCameraLayout = findViewById(R.id.receiverCameraLayout);
         receiverCameraLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -152,31 +156,30 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 // 수신자 아이디 처리 코드
-                                String postData = null;
                                 String receiverId = input.getText().toString();
+
+                                OkHttpClient client = new OkHttpClient();
                                 try {
-                                    postData = "userId=" + URLEncoder.encode(receiverId, "UTF-8");
+                                    Request request = new Request.Builder()
+                                            .url("http://" + ipAddress + ":8081/api/checkReceiverLogin?userName=" + URLEncoder.encode(receiverId, "UTF-8"))
+                                            .get()
+                                            .build();
+
+                                    client.newCall(request).enqueue(new Callback() {
+                                        @Override
+                                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                                            e.printStackTrace();
+                                        }
+
+                                        @Override
+                                        public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                            String responseMessage = response.body().string();
+                                            receiverCameraText.setText(responseMessage);
+                                        }
+                                    });
                                 } catch (UnsupportedEncodingException e) {
                                     e.printStackTrace();
                                 }
-
-                                OkHttpClient client = new OkHttpClient();
-                                RequestBody body = RequestBody.create(postData, MediaType.parse("application/x-www-form-urlencoded"));
-                                Request request = new Request.Builder()
-                                        .url("http://" + readIpAddress() + ":8081/api/call")
-                                        .post(body)
-                                        .build();
-                                client.newCall(request).enqueue(new Callback() {
-                                    @Override
-                                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                                        e.printStackTrace();
-                                    }
-
-                                    @Override
-                                    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                                        Log.d(TAG, "onResponse: 응답왔음");
-                                    }
-                                });
                             }
                         })
                         .setNegativeButton("취소", new DialogInterface.OnClickListener() {

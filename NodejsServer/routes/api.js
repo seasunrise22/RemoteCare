@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { sendToReceiver, saveConnectState } = require('../controllers/api')
+const { checkReceiverLogin } = require('../controllers/api')
 
-router.post('/call', sendToReceiver);
-router.post('/saveConnectState', saveConnectState);
+router.get('/checkReceiverLogin', checkReceiverLogin);
 
 module.exports = router;

@@ -1,16 +1,18 @@
-const UserState = require('../models/userState');
+const db = require('../models');
 
-exports.sendToReceiver = (req, res) => {
-    console.log(req.body.userId);
-}
-
-exports.saveConnectState = async (req, res) => {
-    try {
-        await UserState.create({
-            isConnected: true,
-        });
-        res.json('로그인 상태 저장 성공');
-    } catch (error) {
-        console.error(error);
+exports.checkReceiverLogin = async (req, res) => {
+    const { userName } = req.query;
+    const user = await db.User.findOne({ where: { userName } });
+    if (user) {
+        const userState = await user.getUserState();
+        if (userState) {
+            if (userState.isConnected) {
+                res.json(userName + ' 는(은) 현재 연결된 상태입니다.')
+            } else {
+                res.json(userName + ' 는(은) 현재 연결되지 않은 상태입니다.')
+            }
+        }
+    } else {
+        res.json(userName + ' 는(은) 없는 회원입니다.');
     }
 }
