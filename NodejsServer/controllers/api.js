@@ -7,12 +7,21 @@ exports.checkReceiverLogin = async (req, res) => {
         const userState = await user.getUserState();
         if (userState) {
             if (userState.isConnected) {
-                res.json(userName + ' 는(은) 현재 연결된 상태입니다.')
+                res.json({
+                    message: userName + ' 는(은) 현재 연결된 상태입니다.',
+                    readyToCall: true,
+                });
             } else {
-                res.json(userName + ' 는(은) 현재 연결되지 않은 상태입니다.')
+                res.json({
+                    message: userName + ' 는(은) 현재 연결되지 않은 상태입니다.',
+                    readyToCall: false,
+                });
             }
         }
     } else {
-        res.json(userName + ' 는(은) 없는 회원입니다.');
+        res.json({
+            message: userName + ' 는(은) 없는 회원입니다.',
+            readyToCall: false,
+        });
     }
 }

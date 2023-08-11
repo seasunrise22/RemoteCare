@@ -28,6 +28,18 @@ module.exports = (io) => {
             }
         });
 
+        socket.on('callRequest', async (data) => {
+            const receiver = data.receiver;
+            console.log('callRequest entered receiver is ' + receiver);
+            const user = await db.User.findOne({ where: { userName: receiver } });
+            console.log('user is ' + user.socketId);
+            if (user && user.socketId) {
+                console.log('if (user && user.socketId) run');
+                const receiverSocketId = user.socketId;
+                io.to(receiverSocketId).emit('callResponse');
+            }
+        });
+
         socket.on('disconnect', async () => {
             const user = await db.User.findOne({ where: { socketId: socket.id } });
             let userName;

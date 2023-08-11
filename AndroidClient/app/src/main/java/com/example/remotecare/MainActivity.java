@@ -51,6 +51,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -63,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout receiverCameraLayout;
     private TextView receiverCameraText;
     private String ipAddress;
+    private String selectedReceiver;
 
 
     @Override
@@ -77,6 +79,15 @@ public class MainActivity extends AppCompatActivity {
         ipAddress = readIpAddress();
 
         init();
+
+        socket.on("callResponse", new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                Log.d(TAG, "call: is called");
+//                JSONObject response = (JSONObject) args[0];
+//                Log.d(TAG, "callResponse: " + response);
+            }
+        });
     }
 
     @Override
@@ -156,12 +167,12 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 // 수신자 아이디 처리 코드
-                                String receiverId = input.getText().toString();
+                                String receiverName = input.getText().toString();
 
                                 OkHttpClient client = new OkHttpClient();
                                 try {
                                     Request request = new Request.Builder()
-                                            .url("http://" + ipAddress + ":8081/api/checkReceiverLogin?userName=" + URLEncoder.encode(receiverId, "UTF-8"))
+                                            .url("http://" + ipAddress + ":8081/api/checkReceiverLogin?userName=" + URLEncoder.encode(receiverName, "UTF-8"))
                                             .get()
                                             .build();
 
@@ -173,8 +184,27 @@ public class MainActivity extends AppCompatActivity {
 
                                         @Override
                                         public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                                            String responseMessage = response.body().string();
-                                            receiverCameraText.setText(responseMessage);
+                                            String responseString = response.body().string();
+                                            try {
+                                                JSONObject jsonObject = new JSONObject(responseString);
+                                                String message = jsonObject.getString("message");
+                                                boolean readyToCall = jsonObject.getBoolean("readyToCall");
+                                                receiverCameraText.setText(message);
+                                                if (readyToCall) {
+                                                    selectedReceiver = receiverName;
+                                                } else {
+                                                    selectedReceiver = null;
+                                                }
+                                                String toastMessage = "선택된 수신자: " + selectedReceiver;
+                                                runOnUiThread(new Runnable() {
+                                                    @Override
+                                                    public void run() {
+                                                        Toast.makeText(MainActivity.this, toastMessage, Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+                                            } catch (JSONException e) {
+                                                e.printStackTrace();
+                                            }
                                         }
                                     });
                                 } catch (UnsupportedEncodingException e) {
@@ -194,22 +224,33 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onCallButtonClick(View view) {
-        Log.d(TAG, "onCallButtonClick: clicked");
-        requestCameraPermission();
+        if (selectedReceiver != null) {
+            sendCallSignal(selectedReceiver);
+//            requestCameraPermission();
+        } else {
+            Toast.makeText(this, "수신자를 지정해주세요!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void sendCallSignal(String receiverName) {
+        try {
+            JSONObject data = new JSONObject();
+            data.put("receiver", receiverName);
+            socket.emit("callRequest", data);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     private void requestCameraPermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
-            Log.d(TAG, "requestCameraPermission: if");
             // 권한 요청
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.CAMERA},
                     CAMERA_PERMISSION_REQUEST_CODE);
         } else {
-            // 이미 권한이 허용된 상태이면, 카메라 기능을 사용할 수 있습니다.
-            // 이곳에 화상통화를 시작하는 코드를 추가하세요.
-            Log.d(TAG, "requestCameraPermission: else");
+            // 이미 권한이 허용된 상태
             startVideoCall();
         }
     }
@@ -220,12 +261,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // 권한이 허용되었으므로, 카메라 기능을 사용할 수 있습니다.
-                // 이곳에 화상통화를 시작하는 코드를 추가하세요.
+                // 권한 허용
                 startVideoCall();
             } else {
-                // 권한이 거부되었으므로, 카메라 기능을 사용할 수 없습니다.
-                // 사용자에게 권한이 필요하다는 메시지를 보여줄 수 있습니다.
+                // 권한 거부
                 Toast.makeText(this, "화상통화를 위해서 카메라 권한이 필요합니다.", Toast.LENGTH_SHORT).show();
             }
         }
